@@ -9,7 +9,7 @@ import (
 )
 
 func TestServer_Run(t *testing.T) {
-	server := New()
+	server := New(NewRouter())
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
 	defer testServer.Close()

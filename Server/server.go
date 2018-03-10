@@ -1,7 +1,6 @@
 package Server
 
 import (
-	"github.com/gorilla/mux"
 	"net/http"
 	"io"
 	"encoding/json"
@@ -26,15 +25,17 @@ type Server struct {
 	httpServer  *http.Server
 }
 
-func New() *Server {
+func New(router *Router) *Server {
 	server := &Server{}
 	server.httpServer = &http.Server{
-		Handler:      server.initRouter(),
+		Handler:      router,
 		ReadTimeout:  SERVER_HTTP_READTIMEOUT,
 		WriteTimeout: SERVER_HTTP_WRITETIMEOUT,
 		IdleTimeout:  SERVER_HTTP_IDLETIMEOUT,
 	}
 	server.httpServer.SetKeepAlivesEnabled(true)
+
+	router.HandleFunc("/ping", server.ping).Methods("GET")
 	return server
 }
 
@@ -46,18 +47,7 @@ func (s *Server) Run() {
 	}
 }
 
-func (s *Server) initRouter() *mux.Router{
-	router := mux.NewRouter()
-	router.NotFoundHandler = http.HandlerFunc(
-		func(resp http.ResponseWriter, req *http.Request) {
-			resp.WriteHeader(http.StatusNotFound)
-			resp.Header().Set("Content-Type", "text/html")
-			io.WriteString(resp, "Not Found.")
-		})
 
-	router.HandleFunc("/ping", s.ping).Methods("GET")
-	return router
-}
 
 
 func (s *Server) encode(resp io.Writer, item interface{}) error {
