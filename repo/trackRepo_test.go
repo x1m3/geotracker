@@ -67,7 +67,7 @@ func testTrackRepo(repo Track, randomTracks map[int64][]*entity.Track, t *testin
 
 	// Let's read all driver tracks from repo, to confirm that all was stored
 	for driver, tracks := range randomTracks {
-		repoTracks, err := repo.GetTracksByDriver(driver)
+		repoTracks, err := repo.GetTracksByDriverAsc(driver)
 		if err != nil {
 			t.Fatalf("Error reading tracks. <%s>", err)
 		}

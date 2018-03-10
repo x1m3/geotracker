@@ -29,7 +29,7 @@ func (r *TrackRepoFile) Store(track *entity.Track) error {
 	return err
 }
 
-func (r *TrackRepoFile) GetTracksByDriver(driverID int64) ([]*entity.Track, error) {
+func (r *TrackRepoFile) GetTracksByDriverAsc(driverID int64) ([]*entity.Track, error) {
 	var err error = nil
 	var dto *TrackFileDTO
 
