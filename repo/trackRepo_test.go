@@ -30,7 +30,7 @@ func initTestData() map[int64][]*entity.Track {
 }
 
 // A helper function that insert all tracks for a driver
-func insertDriverTracks(repo TrackRepo, tracks []*entity.Track, t *testing.T) {
+func insertDriverTracks(repo Track, tracks []*entity.Track, t *testing.T) {
 	for _, track := range tracks {
 		if err := repo.Store(track); err != nil {
 			t.Errorf("Error inserting track. <%s>", err)
@@ -52,7 +52,7 @@ func TestTrackRepoSuite(t *testing.T) {
 
 }
 
-func testTrackRepo(repo TrackRepo, randomTracks map[int64][]*entity.Track, t *testing.T) {
+func testTrackRepo(repo Track, randomTracks map[int64][]*entity.Track, t *testing.T) {
 
 	// Let's insert all tracks in repo, all drivers at the "same" time, one goroutine per driver
 	wg := sync.WaitGroup{}
