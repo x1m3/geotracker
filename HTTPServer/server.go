@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/x1m3/geotracker/command"
+	"github.com/x1m3/geotracker/repo"
 )
 
 // Maximum time to read the full http request
@@ -40,6 +41,7 @@ func New(router *Router, adapter ProtocolAdapter) *Server {
 }
 func (s *Server) registerEndpoints(r *Router) {
 	r.HandleFunc("/ping", s.handle(command.NewPing())).Methods("GET")
+	r.HandleFunc("/track/store", s.handle(command.NewSaveTrack(repo.NewTracRepoMemory()))).Methods("POST")
 }
 
 func (s *Server) Run() {
@@ -69,9 +71,10 @@ func (s *Server) handle(command command.Command) http.HandlerFunc {
 		request, err := s.protocolAdapter.Decode(req.Body)
 		if err != nil {
 			if err != nil {
+				resp.WriteHeader(http.StatusBadRequest)
 				msg := fmt.Sprintf("Error decoding body. <%s>", err)
 				log.Printf(msg)
-				http.Error(resp, msg, http.StatusBadRequest)
+				s.protocolAdapter.Encode(resp, msg)
 				return
 			}
 		}
@@ -79,9 +82,10 @@ func (s *Server) handle(command command.Command) http.HandlerFunc {
 		// Run the command
 		response, err := command.Call(request)
 		if err != nil {
+			resp.WriteHeader(s.mapError(err))
 			msg := fmt.Sprintf("Error executing command <%s>", err)
 			log.Printf(msg)
-			http.Error(resp, msg, http.StatusInternalServerError)
+			s.protocolAdapter.Encode(resp, msg)
 			return
 		}
 
@@ -89,14 +93,24 @@ func (s *Server) handle(command command.Command) http.HandlerFunc {
 		buff := bytes.Buffer{}
 		err = s.protocolAdapter.Encode(&buff, response)
 		if err != nil {
+			resp.WriteHeader(http.StatusInternalServerError)
 			msg := fmt.Sprintf("Error encoding response <%s>", err)
 			log.Printf(msg)
-			http.Error(resp, msg, http.StatusInternalServerError)
+			s.protocolAdapter.Encode(resp, msg)
 			return
 		}
 
 		// Write the response to the caller
 		resp.WriteHeader(http.StatusOK)
 		buff.WriteTo(resp)
+	}
+}
+
+func (s *Server) mapError(err error) int{
+	switch err {
+	case command.ErrBadRequest:
+		return http.StatusBadRequest
+	default:
+		return http.StatusInternalServerError
 	}
 }

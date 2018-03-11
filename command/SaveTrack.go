@@ -13,15 +13,18 @@ type trackDTO struct {
 	DriverID int64   `mapstructure:"driver_id"`
 }
 
-type SaveTrackCommand struct{
+type SaveTrackCommand struct {
 	repo repo.Track
 }
 
-func NewSaveTrack(r repo.Track) *SaveTrackCommand{
-	return &SaveTrackCommand{repo:r}
+func NewSaveTrack(r repo.Track) *SaveTrackCommand {
+	return &SaveTrackCommand{repo: r}
 }
 
 func (r *SaveTrackCommand) Call(req Request) (Response, error) {
+	if err := r.guardRequest(req); err != nil {
+		return nil, err
+	}
 	dto := trackDTO{}
 	if err := mapstructure.Decode(req, &dto); err != nil {
 		return nil, err
@@ -33,5 +36,18 @@ func (r *SaveTrackCommand) Call(req Request) (Response, error) {
 	}
 	track := entity.NewTrack(coordinate, dto.DriverID, time.Now())
 
-	return nil, r.repo.Store(track)
+	return "OK", r.repo.Store(track)
+}
+
+func (r *SaveTrackCommand) guardRequest(req Request) error {
+	if _, found := req["latitude"]; !found {
+		return ErrBadRequest
+	}
+	if _, found := req["longitude"]; !found {
+		return ErrBadRequest
+	}
+	if _, found := req["driver_id"]; !found {
+		return ErrBadRequest
+	}
+	return nil
 }
