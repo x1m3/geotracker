@@ -44,11 +44,16 @@ func TestTrackRepoSuite(t *testing.T) {
 		t.Fatalf("Cannot create temp file for test <%s>", err)
 	}
 	defer os.Remove(fp.Name())
-	r := NewTracRepoFile(fp)
+
+	repos := make([]Track,0)
+	repos = append(repos, NewTracRepoFile(fp))
+	repos = append(repos, NewTracRepoMemory())
 
 	randomTracks := initTestData()
 
-	testTrackRepo(r, randomTracks, t)
+	for _, r := range repos { // Test all available repos
+		testTrackRepo(r, randomTracks, t)
+	}
 
 }
 
