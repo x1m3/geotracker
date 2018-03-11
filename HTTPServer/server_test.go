@@ -7,10 +7,13 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"bytes"
+	"github.com/x1m3/geotracker/command"
+	"github.com/x1m3/geotracker/repo"
 )
 
 func TestHTTPServer_Ping(t *testing.T) {
 	server := New(NewRouter(), NewJSONAdapter())
+	server.RegisterEndpoint("/ping", command.NewPing(), "GET")
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
 	defer testServer.Close()
@@ -74,6 +77,7 @@ func TestStoreAtrack(t *testing.T) {
 	}
 
 	server := New(NewRouter(), NewJSONAdapter())
+	server.RegisterEndpoint("/track/store", command.NewSaveTrack(repo.NewTracRepoMemory()), "POST")
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
 	defer testServer.Close()
@@ -123,6 +127,7 @@ func TestStoreAtrackWrongBody(t *testing.T) {
 	}
 
 	server := New(NewRouter(), NewJSONAdapter())
+	server.RegisterEndpoint("/track/store", command.NewSaveTrack(repo.NewTracRepoMemory()), "POST")
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
 	defer testServer.Close()

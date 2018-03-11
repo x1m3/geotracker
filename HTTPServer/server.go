@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/x1m3/geotracker/command"
-	"github.com/x1m3/geotracker/repo"
 )
 
 // Maximum time to read the full http request
@@ -19,9 +18,6 @@ const SERVER_HTTP_WRITETIMEOUT = 30 * time.Second
 // Keep alive timeout. Time to close an idle connection if keep alive is enable
 const SERVER_HTTP_IDLETIMEOUT = 5 * time.Second
 
-// Time to wait for pending connections to finish when doing a shutdown
-const TIMEOUT_SHUTDOWN_WAIT_PENDING_CONNS = 30 * time.Second
-
 type Server struct {
 	httpServer      *http.Server
 	protocolAdapter ProtocolAdapter
@@ -29,7 +25,6 @@ type Server struct {
 
 func New(router *Router, adapter ProtocolAdapter) *Server {
 	server := &Server{protocolAdapter: adapter}
-	server.registerEndpoints(router)
 	server.httpServer = &http.Server{
 		Handler:      router,
 		ReadTimeout:  SERVER_HTTP_READTIMEOUT,
@@ -39,9 +34,9 @@ func New(router *Router, adapter ProtocolAdapter) *Server {
 	server.httpServer.SetKeepAlivesEnabled(true)
 	return server
 }
-func (s *Server) registerEndpoints(r *Router) {
-	r.HandleFunc("/ping", s.handle(command.NewPing())).Methods("GET")
-	r.HandleFunc("/track/store", s.handle(command.NewSaveTrack(repo.NewTracRepoMemory()))).Methods("POST")
+
+func (s *Server) RegisterEndpoint(path string, command command.Command, method string) {
+	s.httpServer.Handler.(*Router).HandleFunc(path, s.handle(command)).Methods(method)
 }
 
 func (s *Server) Run() {
@@ -106,7 +101,7 @@ func (s *Server) handle(command command.Command) http.HandlerFunc {
 	}
 }
 
-func (s *Server) mapError(err error) int{
+func (s *Server) mapError(err error) int {
 	switch err {
 	case command.ErrBadRequest:
 		return http.StatusBadRequest
