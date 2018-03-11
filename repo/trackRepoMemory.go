@@ -8,21 +8,21 @@ import (
 
 type TrackRepoMemory struct {
 	sync.RWMutex
-	tracksByDriver map[int64][]*entity.Track
+	TracksByDriver map[int64][]*entity.Track
 }
 
 func NewTracRepoMemory() *TrackRepoMemory {
-	return &TrackRepoMemory{tracksByDriver: make(map[int64][]*entity.Track)}
+	return &TrackRepoMemory{TracksByDriver: make(map[int64][]*entity.Track)}
 }
 
 func (r *TrackRepoMemory) Store(track *entity.Track) error {
 	r.Lock()
 	defer r.Unlock()
 
-	if _, found := r.tracksByDriver[track.DriverID]; !found {
-		r.tracksByDriver[track.DriverID] = make([]*entity.Track, 0)
+	if _, found := r.TracksByDriver[track.DriverID]; !found {
+		r.TracksByDriver[track.DriverID] = make([]*entity.Track, 0)
 	}
-	r.tracksByDriver[track.DriverID] = append(r.tracksByDriver[track.DriverID], track)
+	r.TracksByDriver[track.DriverID] = append(r.TracksByDriver[track.DriverID], track)
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (r *TrackRepoMemory) GetTracksByDriverAsc(driverID int64) ([]*entity.Track,
 	r.RLock()
 	r.RUnlock()
 
-	if tracks, found = r.tracksByDriver[driverID]; !found {
+	if tracks, found = r.TracksByDriver[driverID]; !found {
 		return nil, errors.New("track not found for driver")
 	}
 	return tracks, nil
