@@ -1,4 +1,4 @@
-package Server
+package server
 
 import (
 	"testing"
@@ -22,7 +22,7 @@ func TestServer_Run(t *testing.T) {
 	if got, expected := resp.StatusCode, http.StatusOK; got != expected {
 		t.Errorf("Bad Status Code. Got <%v>, expecting <%v>", got, expected)
 	}
-	if got, expected := resp.Header.Get("content-type"), "application/json"; got!=expected {
+	if got, expected := resp.Header.Get("Content-Type"), "application/json"; got!=expected {
 		t.Errorf("Bad Content Type. Got <%s>, expecting <%s>", got, expected)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
