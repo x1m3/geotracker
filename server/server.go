@@ -2,8 +2,6 @@ package server
 
 import (
 	"net/http"
-	"io"
-	"encoding/json"
 	"time"
 	"log"
 	"bytes"
@@ -23,16 +21,13 @@ const SERVER_HTTP_IDLETIMEOUT = 5 * time.Second
 // Time to wait for pending connections to finish when doing a shutdown
 const TIMEOUT_SHUTDOWN_WAIT_PENDING_CONNS = 30 * time.Second
 
-type encoder interface {
-	encode(resp io.Writer, item interface{}) error
-}
-
 type Server struct {
-	httpServer *http.Server
+	httpServer      *http.Server
+	protocolAdapter ProtocolAdapter
 }
 
-func New(router *Router) *Server {
-	server := &Server{}
+func New(router *Router, adapter ProtocolAdapter) *Server {
+	server := &Server{protocolAdapter: adapter}
 	server.registerEndpoints(router)
 	server.httpServer = &http.Server{
 		Handler:      router,
@@ -47,18 +42,12 @@ func (s *Server) registerEndpoints(r *Router) {
 	r.HandleFunc("/ping", s.handle(command.Ping)).Methods("GET")
 }
 
-
 func (s *Server) Run() {
 	log.Print("Starting server")
 	err := s.httpServer.ListenAndServe()
 	if err != nil {
 		log.Fatalf("Cannot start server. Reason <%s>", err)
 	}
-}
-
-func (s *Server) encode(resp io.Writer, item interface{}) error {
-	jsonEncoder := json.NewEncoder(resp)
-	return jsonEncoder.Encode(item)
 }
 
 // server.handle returns a function that satisfies http.HandlerFunc. It's purpose is to execute a command.Command and
@@ -71,21 +60,19 @@ func (s *Server) encode(resp io.Writer, item interface{}) error {
 //    writes the response in http format.
 func (s *Server) handle(command command.Command) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		request:= make(map[string]interface{},0)
+		request := make(map[string]interface{}, 0)
 
 		// Write a proper content-type header
-		resp.Header().Set("Content-Type", "application/json")
+		resp.Header().Set("Content-Type", s.protocolAdapter.ContentType())
 
 		// Decode the body.
-		decoder := json.NewDecoder(req.Body)
-		if decoder.More() {
-			if err := decoder.Decode(&request); err != nil {
-				if err != nil {
-					msg := fmt.Sprintf("Error decoding body. <%s>", err)
-					log.Printf(msg)
-					http.Error(resp, msg, http.StatusBadRequest)
-					return
-				}
+		request, err := s.protocolAdapter.Decode(req.Body)
+		if err != nil {
+			if err != nil {
+				msg := fmt.Sprintf("Error decoding body. <%s>", err)
+				log.Printf(msg)
+				http.Error(resp, msg, http.StatusBadRequest)
+				return
 			}
 		}
 
@@ -100,7 +87,7 @@ func (s *Server) handle(command command.Command) http.HandlerFunc {
 
 		// Decode the command response
 		buff := bytes.Buffer{}
-		err = s.encode(&buff, response)
+		err = s.protocolAdapter.Encode(&buff, response)
 		if err != nil {
 			msg := fmt.Sprintf("Error encoding response <%s>", err)
 			log.Printf(msg)
@@ -113,4 +100,3 @@ func (s *Server) handle(command command.Command) http.HandlerFunc {
 		buff.WriteTo(resp)
 	}
 }
-

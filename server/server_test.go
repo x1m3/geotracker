@@ -9,7 +9,7 @@ import (
 )
 
 func TestServer_Run(t *testing.T) {
-	server := New(NewRouter())
+	server := New(NewRouter(), NewJSONAdapter())
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
 	defer testServer.Close()
