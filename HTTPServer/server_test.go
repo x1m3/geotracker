@@ -1,4 +1,4 @@
-package server
+package HTTPServer
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func TestServer_Run(t *testing.T) {
 
 	resp, err := http.Get(testServer.URL + "/ping")
 	if err != nil {
-		t.Errorf("Error pinging server. <%s>", err)
+		t.Errorf("Error pinging HTTPServer. <%s>", err)
 	}
 
 	if got, expected := resp.StatusCode, http.StatusOK; got != expected {

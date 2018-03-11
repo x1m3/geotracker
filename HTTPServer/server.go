@@ -1,4 +1,4 @@
-package server
+package HTTPServer
 
 import (
 	"net/http"
@@ -43,16 +43,16 @@ func (s *Server) registerEndpoints(r *Router) {
 }
 
 func (s *Server) Run() {
-	log.Print("Starting server")
+	log.Print("Starting HTTPServer")
 	err := s.httpServer.ListenAndServe()
 	if err != nil {
-		log.Fatalf("Cannot start server. Reason <%s>", err)
+		log.Fatalf("Cannot start HTTPServer. Reason <%s>", err)
 	}
 }
 
-// server.handle returns a function that satisfies http.HandlerFunc. It's purpose is to execute a command.Command and
+// HTTPServer.handle returns a function that satisfies http.HandlerFunc. It's purpose is to execute a command.Command and
 // adapt command.Request and command.Response to an http request. This way, commands could be usable in other protocols, simple
-// implementing a new server that would translate a command response to this other protocol
+// implementing a new HTTPServer that would translate a command response to this other protocol
 //
 // 1) Decodes the body
 // 2) Runs a command
