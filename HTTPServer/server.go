@@ -39,7 +39,7 @@ func New(router *Router, adapter ProtocolAdapter) *Server {
 	return server
 }
 func (s *Server) registerEndpoints(r *Router) {
-	r.HandleFunc("/ping", s.handle(command.Ping)).Methods("GET")
+	r.HandleFunc("/ping", s.handle(command.NewPing())).Methods("GET")
 }
 
 func (s *Server) Run() {
@@ -77,7 +77,7 @@ func (s *Server) handle(command command.Command) http.HandlerFunc {
 		}
 
 		// Run the command
-		response, err := command(request)
+		response, err := command.Call(request)
 		if err != nil {
 			msg := fmt.Sprintf("Error executing command <%s>", err)
 			log.Printf(msg)
