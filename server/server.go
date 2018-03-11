@@ -33,6 +33,7 @@ type Server struct {
 
 func New(router *Router) *Server {
 	server := &Server{}
+	server.registerEndpoints(router)
 	server.httpServer = &http.Server{
 		Handler:      router,
 		ReadTimeout:  SERVER_HTTP_READTIMEOUT,
@@ -40,10 +41,12 @@ func New(router *Router) *Server {
 		IdleTimeout:  SERVER_HTTP_IDLETIMEOUT,
 	}
 	server.httpServer.SetKeepAlivesEnabled(true)
-
-	router.HandleFunc("/ping", server.handle(server.ping)).Methods("GET")
 	return server
 }
+func (s *Server) registerEndpoints(r *Router) {
+	r.HandleFunc("/ping", s.handle(command.Ping)).Methods("GET")
+}
+
 
 func (s *Server) Run() {
 	log.Print("Starting server")
@@ -111,6 +114,3 @@ func (s *Server) handle(command command.Command) http.HandlerFunc {
 	}
 }
 
-func (s *Server) ping(req command.Request) (command.Response, error) {
-	return "pong", nil
-}
