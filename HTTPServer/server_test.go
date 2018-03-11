@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 )
 
-func TestServer_Run(t *testing.T) {
+func TestHTTPServer_Ping(t *testing.T) {
 	server := New(NewRouter(), NewJSONAdapter())
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
@@ -22,9 +22,11 @@ func TestServer_Run(t *testing.T) {
 	if got, expected := resp.StatusCode, http.StatusOK; got != expected {
 		t.Errorf("Bad Status Code. Got <%v>, expecting <%v>", got, expected)
 	}
+
 	if got, expected := resp.Header.Get("Content-Type"), "application/json"; got!=expected {
 		t.Errorf("Bad Content Type. Got <%s>, expecting <%s>", got, expected)
 	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err!=nil {
 		t.Errorf("Error reading body <%s>", err)
@@ -39,3 +41,25 @@ func TestServer_Run(t *testing.T) {
 		t.Errorf("Wrong body response for /ping. Got <%s>, expecting <%s>", got, expected)
 	}
 }
+
+func TestHTTPServerNotFound(t *testing.T) {
+	server := New(NewRouter(), NewJSONAdapter())
+
+	testServer := httptest.NewServer(server.httpServer.Handler)
+	defer testServer.Close()
+
+	resp, err := http.Get(testServer.URL + "/this/url/doesnt/exists")
+	if err != nil {
+		t.Errorf("Error pinging HTTPServer. <%s>", err)
+	}
+
+	if got, expected := resp.StatusCode, http.StatusNotFound; got != expected {
+		t.Errorf("Bad Status Code. Got <%v>, expecting <%v>", got, expected)
+	}
+
+	if got, expected := resp.Header.Get("Content-Type"), "text/plain; charset=utf-8"; got!=expected {
+		t.Errorf("Bad Content Type. Got <%s>, expecting <%s>", got, expected)
+	}
+}
+
+
