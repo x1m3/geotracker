@@ -1,5 +1,5 @@
 A sample code to demonstrate an HTTP server that accepts json requests
-with a GPS coortinate and a tracker id and stores asynchronously in a mysql database.
+with a {GPS coordinate, tracker id} and stores asynchronously in a mysql database.
 
 ## How to install
 
@@ -15,7 +15,7 @@ with a GPS coortinate and a tracker id and stores asynchronously in a mysql data
 
 ## Configure MySQL database
 
-Create a database a Mysql database, and add a table like this.
+Create a Mysql database, and add a table like this.
 
 ```
 CREATE TABLE `track` (
@@ -31,7 +31,7 @@ CREATE TABLE `track` (
 
 ## Run the server
 
-Execute "geotracker help" to get some information. You need to pass in command like the database configuration and the port to listen.
+Execute "geotracker help" to get some information. You need to pass in command line the database parameters and the port to listen.
 
 Database host, database port and http port are optional and defaults to 127.0.0.1, 3306 and 8080.
 
@@ -73,21 +73,23 @@ You will get a 200 response with a body message "OK". Your data should be on the
 
 Code is more or less self explanatory. The interesting point is that in stores tracks asynchronously. The client gets and immediate response, the track is enqueued and is stored later via a pool of workers in the database.
 
-The most interesting part of all of this is the file repo/trackRepoAsync.go. Looking at the constructor wee see that it accepts 3 params: An interface to a repo, the lenght of the queue and the number of workers.
+The most interesting part of all of this is the file repo/trackRepoAsync.go. Looking at the constructor we see that it accepts 3 params: An interface to a repo, the length of the queue and the number of workers.
 
 ```
 func NewTrackRepoAsync(r Track, queueSize int, nWorkers int) *TrackRepoAsync {
 ```
 
-The size is implemented with a buffered channel. Writing to this channel will not block until the channel is full.
+The queue is implemented with a buffered channel. Writing to this channel will not block until the channel is full.
 
-The third parameter is the number of workers. This adds pressure to the database, allowing to send simultaneous data via multiple connections. Take care to do not set this number very high, because it can kill your database. Right now, it is configured on main.go.
+The third parameter is the number of workers. The repo will launch some goroutines that will be blocked, listening to any order from the channel. This adds pressure to the database, allowing to send simultaneous data via multiple connections. Take care to do not set this number very high, because it can kill your database. Right now, it is configured on main.go.
 
 ```
 httpServer.RegisterEndpoint("/track/store", command.NewSaveTrack(repo.NewTrackRepoAsync(repo.NewTrackRepoMYSQL(db), 10000, 20)), "POST")
 ```
 
 If, at some point, the queue is full, then any call to the repo will start to block, and the system will increase the response time to the client. This system is only capable of asking more work to the database and enqueue work that could be done at some point later.
+
+The other interesting point is the concept of metarepo. Thanks to the use of interfaces, we can use another repo to store data in other places, and we can use it directly or combine with the AsyncRepo.
 
 ## Things to be done.
 
