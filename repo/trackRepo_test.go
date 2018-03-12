@@ -1,12 +1,12 @@
 package repo
 
 import (
-	"testing"
-	"io/ioutil"
-	"os"
 	"github.com/x1m3/geotracker/entity"
+	"io/ioutil"
 	"math/rand"
+	"os"
 	"sync"
+	"testing"
 	"time"
 )
 
@@ -45,9 +45,17 @@ func TestTrackRepoSuite(t *testing.T) {
 	}
 	defer os.Remove(fp.Name())
 
-	repos := make([]Track,0)
+	repos := make([]Track, 0)
 	repos = append(repos, NewTracRepoFile(fp))
 	repos = append(repos, NewTracRepoMemory())
+	/* disabled
+	db, err := sql.Open("mysql", "user:password@/geotracker?parseTime=true")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	repos = append(repos, NewTrackRepoMYSQL(db))
+	*/
 
 	randomTracks := initTestData()
 
@@ -77,7 +85,7 @@ func testTrackRepo(repo Track, randomTracks map[int64][]*entity.Track, t *testin
 			t.Fatalf("Error reading tracks. <%s>", err)
 		}
 		if got, expected := len(repoTracks), len(tracks); got != expected {
-			t.Fatalf("Error reading tracks for driver <%d>. Len differs. got <%d>, expecting <%d>", driver, got, expected)
+			t.Errorf("Error reading tracks for driver <%d>. Len differs. got <%d>, expecting <%d>", driver, got, expected)
 		}
 
 		for i := 0; i < len(tracks); i++ {
