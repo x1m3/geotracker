@@ -36,7 +36,7 @@ func main() {
 	protocolAdapter := HTTPServer.NewJSONAdapter()
 	httpServer := HTTPServer.New(router, protocolAdapter)
 	httpServer.RegisterEndpoint("/ping", command.NewPing(), "GET")
-	httpServer.RegisterEndpoint("/track/store", command.NewSaveTrack(repo.NewTrackRepoMYSQL(db)), "POST")
+	httpServer.RegisterEndpoint("/track/store", command.NewSaveTrack(repo.NewTrackRepoAsync(repo.NewTrackRepoMYSQL(db), 10000, 20)), "POST")
 
 	// Server will run in his own goroutine. We need to wait for it to finish
 	wg := &sync.WaitGroup{}

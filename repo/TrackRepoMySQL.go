@@ -41,7 +41,7 @@ func NewTrackRepoMYSQL(db *sql.DB) *TrackRepoMYSQL {
 	if err != nil {
 		log.Fatal(err)
 	}
-	repo.tracksByDriverAscPS, err = repo.db.Prepare("SELECT driver_id, lat, lon, created_on FROM track WHERE driver_id=?")
+	repo.tracksByDriverAscPS, err = repo.db.Prepare("SELECT driver_id, lat, lon, created_on FROM track WHERE driver_id=? ORDER BY created_on, id ASC")
 	if err != nil {
 		log.Fatal(err)
 	}
