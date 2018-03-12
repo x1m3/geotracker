@@ -1,12 +1,12 @@
 package HTTPServer
 
 import (
-	"net/http"
-	"time"
-	"log"
 	"bytes"
 	"fmt"
 	"github.com/x1m3/geotracker/command"
+	"log"
+	"net/http"
+	"time"
 )
 
 // Maximum time to read the full http request
@@ -23,9 +23,10 @@ type Server struct {
 	protocolAdapter ProtocolAdapter
 }
 
-func New(router *Router, adapter ProtocolAdapter) *Server {
+func New(router *Router, adapter ProtocolAdapter, virtualHost string, port int) *Server {
 	server := &Server{protocolAdapter: adapter}
 	server.httpServer = &http.Server{
+		Addr:         fmt.Sprintf("%s:%d", virtualHost, port),
 		Handler:      router,
 		ReadTimeout:  SERVER_HTTP_READTIMEOUT,
 		WriteTimeout: SERVER_HTTP_WRITETIMEOUT,
@@ -40,7 +41,7 @@ func (s *Server) RegisterEndpoint(path string, command command.Command, method s
 }
 
 func (s *Server) Run() {
-	log.Print("Starting HTTPServer")
+	log.Printf("Server listening on %s", s.httpServer.Addr)
 	err := s.httpServer.ListenAndServe()
 	if err != nil {
 		log.Fatalf("Cannot start HTTPServer. Reason <%s>", err)

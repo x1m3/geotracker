@@ -1,18 +1,18 @@
 package HTTPServer
 
 import (
-	"testing"
-	"net/http/httptest"
-	"net/http"
-	"io/ioutil"
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"github.com/x1m3/geotracker/command"
 	"github.com/x1m3/geotracker/repo"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 func TestHTTPServer_Ping(t *testing.T) {
-	server := New(NewRouter(), NewJSONAdapter())
+	server := New(NewRouter(), NewJSONAdapter(), "", 80)
 	server.RegisterEndpoint("/ping", command.NewPing(), "GET")
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
@@ -27,27 +27,27 @@ func TestHTTPServer_Ping(t *testing.T) {
 		t.Errorf("Bad Status Code. Got <%v>, expecting <%v>", got, expected)
 	}
 
-	if got, expected := resp.Header.Get("Content-Type"), "application/json"; got!=expected {
+	if got, expected := resp.Header.Get("Content-Type"), "application/json"; got != expected {
 		t.Errorf("Bad Content Type. Got <%s>, expecting <%s>", got, expected)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-	if err!=nil {
+	if err != nil {
 		t.Errorf("Error reading body <%s>", err)
 	}
 
-	got:=""
-	if err := json.Unmarshal(body,&got); err!=nil {
+	got := ""
+	if err := json.Unmarshal(body, &got); err != nil {
 		t.Errorf("Error decoding json response <%s>", err)
 	}
 
-	if expected := "pong"; got!=expected {
+	if expected := "pong"; got != expected {
 		t.Errorf("Wrong body response for /ping. Got <%s>, expecting <%s>", got, expected)
 	}
 }
 
 func TestHTTPServerNotFound(t *testing.T) {
-	server := New(NewRouter(), NewJSONAdapter())
+	server := New(NewRouter(), NewJSONAdapter(), "", 80)
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
 	defer testServer.Close()
@@ -61,11 +61,10 @@ func TestHTTPServerNotFound(t *testing.T) {
 		t.Errorf("Bad Status Code. Got <%v>, expecting <%v>", got, expected)
 	}
 
-	if got, expected := resp.Header.Get("Content-Type"), "text/plain; charset=utf-8"; got!=expected {
+	if got, expected := resp.Header.Get("Content-Type"), "text/plain; charset=utf-8"; got != expected {
 		t.Errorf("Bad Content Type. Got <%s>, expecting <%s>", got, expected)
 	}
 }
-
 
 func TestStoreAtrack(t *testing.T) {
 	testTracks := []string{
@@ -76,15 +75,15 @@ func TestStoreAtrack(t *testing.T) {
 		"{ \"latitude\" : 4.9224, \"longitude\" : 3.38234, \"driver_id\": 2 }",
 	}
 
-	server := New(NewRouter(), NewJSONAdapter())
+	server := New(NewRouter(), NewJSONAdapter(), "", 80)
 	server.RegisterEndpoint("/track/store", command.NewSaveTrack(repo.NewTracRepoMemory()), "POST")
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
 	defer testServer.Close()
 
 	for _, track := range testTracks {
-		resp, err := http.Post(testServer.URL + "/track/store", "application/json", bytes.NewBufferString(track))
-		if err!=nil {
+		resp, err := http.Post(testServer.URL+"/track/store", "application/json", bytes.NewBufferString(track))
+		if err != nil {
 			t.Errorf("Error requesting url <%s>", err)
 		}
 
@@ -94,29 +93,28 @@ func TestStoreAtrack(t *testing.T) {
 		}
 
 		// Check content type
-		if got, expected := resp.Header.Get("Content-Type"), "application/json"; got!=expected {
+		if got, expected := resp.Header.Get("Content-Type"), "application/json"; got != expected {
 			t.Errorf("Bad Content Type. Got <%s>, expecting <%s>", got, expected)
 		}
 
 		body, err := ioutil.ReadAll(resp.Body)
-		if err!=nil {
+		if err != nil {
 			t.Errorf("Error reading body <%s>", err)
 		}
 
 		// Check that response is a valid json
-		got:=""
-		if err := json.Unmarshal(body,&got); err!=nil {
+		got := ""
+		if err := json.Unmarshal(body, &got); err != nil {
 			t.Errorf("Error decoding json response <%s>", err)
 		}
 
 		// Check response
-		if expected := "OK"; got!=expected {
+		if expected := "OK"; got != expected {
 			t.Errorf("Wrong body response for /track/store. Got <%s>, expecting <%s>", got, expected)
 		}
 		resp.Body.Close()
 	}
 }
-
 
 func TestStoreAtrackWrongBody(t *testing.T) {
 	testTracks := []string{
@@ -126,15 +124,15 @@ func TestStoreAtrackWrongBody(t *testing.T) {
 		"{ \"latitude\" : lala, \"longitude\" : 3.37321, \"driver_id\": 2 }",
 	}
 
-	server := New(NewRouter(), NewJSONAdapter())
+	server := New(NewRouter(), NewJSONAdapter(), "", 80)
 	server.RegisterEndpoint("/track/store", command.NewSaveTrack(repo.NewTracRepoMemory()), "POST")
 
 	testServer := httptest.NewServer(server.httpServer.Handler)
 	defer testServer.Close()
 
 	for _, track := range testTracks {
-		resp, err := http.Post(testServer.URL + "/track/store", "application/json", bytes.NewBufferString(track))
-		if err!=nil {
+		resp, err := http.Post(testServer.URL+"/track/store", "application/json", bytes.NewBufferString(track))
+		if err != nil {
 			t.Errorf("Error requesting url <%s>", err)
 		}
 
@@ -144,23 +142,21 @@ func TestStoreAtrackWrongBody(t *testing.T) {
 		}
 
 		// Check content type
-		if got, expected := resp.Header.Get("Content-Type"), "application/json"; got!=expected {
+		if got, expected := resp.Header.Get("Content-Type"), "application/json"; got != expected {
 			t.Errorf("Bad Content Type. Got <%s>, expecting <%s>", got, expected)
 		}
 
 		body, err := ioutil.ReadAll(resp.Body)
-		if err!=nil {
+		if err != nil {
 			t.Errorf("Error reading body <%s>", err)
 		}
 
 		// Check that response is a valid json
-		got:=""
-		if err := json.Unmarshal(body,&got); err!=nil {
+		got := ""
+		if err := json.Unmarshal(body, &got); err != nil {
 			t.Errorf("Error decoding json response <%s>", err)
 		}
-
 
 		resp.Body.Close()
 	}
 }
-
