@@ -19,11 +19,14 @@ func initTestData() map[int64][]*entity.Track {
 
 	for driver = 0; driver < N_DRIVERS; driver++ {
 		c, _ := entity.NewCoordinate(0.0, 0.0)
+		newLat, newLon := 0.0, 0.0
+		t := time.Now()
 		for i := 0; i < TRACKS_PER_DRIVER; i++ {
-			randomTracks[driver] = append(randomTracks[driver], entity.NewTrack(c, driver, time.Now()))
-			newLat := c.Lat() + float64(rand.Intn(10)-5)/10000
-			newLon := c.Lon() + float64(rand.Intn(10)-5)/10000
 			c, _ = entity.NewCoordinate(newLat, newLon)
+			randomTracks[driver] = append(randomTracks[driver], entity.NewTrack(c, driver, t))
+			newLat = c.Lat() + float64(rand.Intn(10)-5)/10000
+			newLon = c.Lon() + float64(rand.Intn(10)-5)/10000
+			t = t.Add(1 * time.Second)
 		}
 	}
 	return randomTracks
@@ -46,15 +49,18 @@ func TestTrackRepoSuite(t *testing.T) {
 	defer os.Remove(fp.Name())
 
 	repos := make([]Track, 0)
+
 	repos = append(repos, NewTracRepoFile(fp))
 	repos = append(repos, NewTracRepoMemory())
-	/* disabled
-	db, err := sql.Open("mysql", "user:password@/geotracker?parseTime=true")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-	repos = append(repos, NewTrackRepoMYSQL(db))
+	repos = append(repos, NewTrackRepoAsync(NewTracRepoMemory(), 1000, 100))
+
+	/*
+		db, err := sql.Open("mysql", "xime:@/geotracker?parseTime=true")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer db.Close()
+		repos = append(repos, NewTrackRepoAsync(NewTrackRepoMYSQL(db), 1000, 10))
 	*/
 
 	randomTracks := initTestData()
@@ -77,6 +83,8 @@ func testTrackRepo(repo Track, randomTracks map[int64][]*entity.Track, t *testin
 		}(driverTracks)
 	}
 	wg.Wait()
+
+	time.Sleep(1 * time.Second)
 
 	// Let's read all driver tracks from repo, to confirm that all was stored
 	for driver, tracks := range randomTracks {

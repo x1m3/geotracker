@@ -1,9 +1,9 @@
 package repo
 
 import (
-	"sync"
-	"github.com/x1m3/geotracker/entity"
 	"errors"
+	"github.com/x1m3/geotracker/entity"
+	"sync"
 )
 
 type TrackRepoMemory struct {
@@ -31,7 +31,7 @@ func (r *TrackRepoMemory) GetTracksByDriverAsc(driverID int64) ([]*entity.Track,
 	var found bool
 
 	r.RLock()
-	r.RUnlock()
+	defer r.RUnlock()
 
 	if tracks, found = r.TracksByDriver[driverID]; !found {
 		return nil, errors.New("track not found for driver")
