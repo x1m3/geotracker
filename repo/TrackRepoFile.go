@@ -1,13 +1,14 @@
 package repo
 
 import (
-	"os"
-	"github.com/x1m3/geotracker/entity"
-	"sync"
 	"bytes"
 	"encoding/binary"
-	"io"
 	"errors"
+	"github.com/x1m3/geotracker/entity"
+	"io"
+	"os"
+	"sort"
+	"sync"
 	"time"
 )
 
@@ -29,7 +30,7 @@ func (r *TrackRepoFile) Store(track *entity.Track) error {
 	return err
 }
 
-func (r *TrackRepoFile) GetTracksByDriverAsc(driverID int64) ([]*entity.Track, error) {
+func (r *TrackRepoFile) GetTracksByDriverAsc(driverID int64) (entity.TrackList, error) {
 	var err error = nil
 	var dto *TrackFileDTO
 
@@ -44,7 +45,7 @@ func (r *TrackRepoFile) GetTracksByDriverAsc(driverID int64) ([]*entity.Track, e
 	for {
 		dto, err = r.readRecord()
 		switch err {
-		case nil :
+		case nil:
 			if tracks, err = r.filterByDriverID(tracks, dto, driverID); err != nil {
 				return nil, err
 			}
@@ -56,7 +57,7 @@ func (r *TrackRepoFile) GetTracksByDriverAsc(driverID int64) ([]*entity.Track, e
 	}
 }
 
-func (r *TrackRepoFile) filterByDriverID(tracks []*entity.Track, dto *TrackFileDTO, driverID int64) ([]*entity.Track, error) {
+func (r *TrackRepoFile) filterByDriverID(tracks entity.TrackList, dto *TrackFileDTO, driverID int64) (entity.TrackList, error) {
 	if dto.DriverID == driverID {
 		c, err := entity.NewCoordinate(dto.Lat, dto.Lon)
 		if err != nil {
@@ -64,6 +65,7 @@ func (r *TrackRepoFile) filterByDriverID(tracks []*entity.Track, dto *TrackFileD
 		}
 		tracks = append(tracks, entity.NewTrack(c, driverID, time.Unix(0, dto.TimeUnix)))
 	}
+	sort.Sort(entity.ByDate(tracks))
 	return tracks, nil
 }
 

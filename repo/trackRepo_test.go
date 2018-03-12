@@ -10,12 +10,12 @@ import (
 	"time"
 )
 
-func initTestData() map[int64][]*entity.Track {
+func initTestData() map[int64]entity.TrackList {
 	var driver int64
 	const N_DRIVERS = 10
-	const TRACKS_PER_DRIVER = 1000
+	const TRACKS_PER_DRIVER = 500
 
-	randomTracks := make(map[int64][]*entity.Track, 0)
+	randomTracks := make(map[int64]entity.TrackList, 0)
 
 	for driver = 0; driver < N_DRIVERS; driver++ {
 		c, _ := entity.NewCoordinate(0.0, 0.0)
@@ -33,7 +33,7 @@ func initTestData() map[int64][]*entity.Track {
 }
 
 // A helper function that insert all tracks for a driver
-func insertDriverTracks(repo Track, tracks []*entity.Track, t *testing.T) {
+func insertDriverTracks(repo Track, tracks entity.TrackList, t *testing.T) {
 	for _, track := range tracks {
 		if err := repo.Store(track); err != nil {
 			t.Errorf("Error inserting track. <%s>", err)
@@ -42,16 +42,21 @@ func insertDriverTracks(repo Track, tracks []*entity.Track, t *testing.T) {
 }
 
 func TestTrackRepoSuite(t *testing.T) {
-	fp, err := ioutil.TempFile(os.TempDir(), "trakRepo")
+	fp1, err := ioutil.TempFile(os.TempDir(), "trakRepo")
 	if err != nil {
 		t.Fatalf("Cannot create temp file for test <%s>", err)
 	}
-	defer os.Remove(fp.Name())
+	fp2, err := ioutil.TempFile(os.TempDir(), "trakRepo")
+	if err != nil {
+		t.Fatalf("Cannot create temp file for test <%s>", err)
+	}
+	defer os.Remove(fp1.Name())
+	defer os.Remove(fp2.Name())
 
 	repos := make([]Track, 0)
-
-	repos = append(repos, NewTracRepoFile(fp))
+	repos = append(repos, NewTracRepoFile(fp1))
 	repos = append(repos, NewTracRepoMemory())
+	repos = append(repos, NewTrackRepoAsync(NewTracRepoFile(fp2), 1000, 100))
 	repos = append(repos, NewTrackRepoAsync(NewTracRepoMemory(), 1000, 100))
 
 	/*
@@ -71,13 +76,13 @@ func TestTrackRepoSuite(t *testing.T) {
 
 }
 
-func testTrackRepo(repo Track, randomTracks map[int64][]*entity.Track, t *testing.T) {
+func testTrackRepo(repo Track, randomTracks map[int64]entity.TrackList, t *testing.T) {
 
 	// Let's insert all tracks in repo, all drivers at the "same" time, one goroutine per driver
 	wg := sync.WaitGroup{}
 	for _, driverTracks := range randomTracks {
 		wg.Add(1)
-		go func(driverTracks []*entity.Track) {
+		go func(driverTracks entity.TrackList) {
 			insertDriverTracks(repo, driverTracks, t)
 			wg.Done()
 		}(driverTracks)

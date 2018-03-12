@@ -38,7 +38,7 @@ func (r *TrackRepoAsync) Store(track *entity.Track) error {
 }
 
 // No workers here. We simply do the request using the underlying repo.
-func (r *TrackRepoAsync) GetTracksByDriverAsc(driverID int64) ([]*entity.Track, error) {
+func (r *TrackRepoAsync) GetTracksByDriverAsc(driverID int64) (entity.TrackList, error) {
 	return r.repo.GetTracksByDriverAsc(driverID)
 }
 

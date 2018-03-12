@@ -53,12 +53,12 @@ func (r *TrackRepoMYSQL) Store(track *entity.Track) error {
 	return err
 }
 
-func (r *TrackRepoMYSQL) GetTracksByDriverAsc(driverID int64) ([]*entity.Track, error) {
+func (r *TrackRepoMYSQL) GetTracksByDriverAsc(driverID int64) (entity.TrackList, error) {
 	rows, err := r.tracksByDriverAscPS.Query(driverID)
 	defer rows.Close()
 
 	dto := TrackMysqlDTO{}
-	tracks := make([]*entity.Track, 0)
+	tracks := make(entity.TrackList, 0)
 
 	switch err {
 	case nil:

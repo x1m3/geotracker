@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+type TrackList []*Track
+
+type ByDate TrackList
+
+func (list ByDate) Len() int           { return len(list) }
+func (list ByDate) Less(i, j int) bool { return list[i].ReceivedOn.Before(list[j].ReceivedOn) }
+func (list ByDate) Swap(i, j int)      { list[i], list[j] = list[j], list[i] }
+
 type Track struct {
 	Point      *Coordinate
 	DriverID   int64
